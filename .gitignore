@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.env
+venv/
+.venv/
+
+# Environment variables - NEVER upload these to GitHub
+.env
+
+# Data files - too large for GitHub
+data/raw/
+
+# ML model files
+*.pkl
+*.joblib
+
+# Node / React
+node_modules/
+dist/
+build/
+
+# Mac junk
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
