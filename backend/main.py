@@ -69,3 +69,9 @@ from routers.win_probability import router as win_probability_router
 # Connect router to main app
 # Now /api/win-probability/predict will work!
 app.include_router(win_probability_router)
+
+# Import narrator router
+from routers.narrator import router as narrator_router
+
+# Connect narrator router
+app.include_router(narrator_router)

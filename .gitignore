@@ -7,6 +7,9 @@ venv/
 
 # Environment variables - NEVER upload these to GitHub
 .env
+# Environment variables - NEVER upload these to GitHub
+.env
+.env.example
 
 # Data files - too large for GitHub
 data/raw/
