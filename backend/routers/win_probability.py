@@ -33,9 +33,20 @@ FEATURES_PATH = os.path.join(BASE_DIR, "ml", "feature_names.pkl")
 
 # Load model files when server starts
 # These stay in memory so responses are fast
-model = joblib.load(MODEL_PATH)
-explainer = joblib.load(EXPLAINER_PATH)
-features = joblib.load(FEATURES_PATH)
+# Try to load model files — they may not exist on server yet
+try:
+    model = joblib.load(MODEL_PATH)
+    explainer = joblib.load(EXPLAINER_PATH)
+    features = joblib.load(FEATURES_PATH)
+    print("✅ ML models loaded successfully!")
+except Exception as e:
+    # If models not found, set to None
+    # Server still starts — just returns error on predict
+    print(f"⚠️ ML models not found: {e}")
+    model = None
+    explainer = None
+    features = ['cum_runs','cum_wickets','balls_remaining',
+                'runs_needed','ball_number','target']
 
 # Define what data this endpoint expects
 # BaseModel automatically validates the data
@@ -90,7 +101,14 @@ def shap_to_english(feature_name, shap_value):
 # POST endpoint — frontend sends match situation, we return probability
 @router.post("/predict")
 def predict_win_probability(situation: MatchSituation):
-    
+    @router.post("/predict")
+def predict_win_probability(situation: MatchSituation):
+    # Check if model is loaded
+    if model is None:
+        return {"error": "Model not loaded yet", 
+                "win_probability": 50.0,
+                "lose_probability": 50.0,
+                "reasons": ["Model loading..."]}
     # Convert input to numpy array in correct feature order
     input_data = np.array([[
         situation.cum_runs,
