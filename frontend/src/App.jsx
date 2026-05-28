@@ -12,6 +12,7 @@ import Home from './pages/Home'
 import WinProbability from './pages/WinProbability'
 import Narrator from './pages/Narrator'
 import PressureScore from './pages/PressureScore'
+import DeltaBriefing from './pages/DeltaBriefing'  // Feature 1 — Delta Brief
 
 // Main App component
 function App() {
@@ -31,6 +32,9 @@ function App() {
           
           {/* Feature 4 — Pressure Score */}
           <Route path="/pressure" element={<PressureScore />} />
+
+          {/* Feature 1 — Delta Brief "Explain Like I Was Studying" */}
+          <Route path="/delta" element={<DeltaBriefing />} />
         </Routes>
       </div>
     </Router>

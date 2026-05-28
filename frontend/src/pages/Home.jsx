@@ -13,7 +13,7 @@ const features = [
     title: "Delta Brief",
     emoji: "⏱️",
     description: "Only what changed since you last checked",
-    route: "/narrator",
+    route: "/delta",   // ← fixed: points to the dedicated Delta page
     color: "from-purple-900 to-purple-700"
   },
   {
