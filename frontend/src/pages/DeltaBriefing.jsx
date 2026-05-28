@@ -93,7 +93,7 @@ function DeltaBriefing() {
     const fetchMatches = async () => {
       try {
         // Call our backend to get live matches
-        const res = await axios.get('http://localhost:8000/api/delta/matches')
+        const res = await axios.get('https://criciq-backend-8aoj.onrender.com/api/delta/matches')
         setMatches(res.data.matches)
 
         // Auto-select first live match
@@ -156,7 +156,7 @@ function DeltaBriefing() {
 
     try {
       // Tell backend to save current match snapshot
-      const res = await axios.post('http://localhost:8000/api/delta/start-session', {
+      const res = await axios.post('https://criciq-backend-8aoj.onrender.com/api/delta/start-session', {
         match_id: selectedMatch.id,
         study_minutes: selectedTimer.value
       })
@@ -198,7 +198,7 @@ function DeltaBriefing() {
 
     try {
       // Ask backend for the AI-generated Delta Brief™
-      const res = await axios.get(`http://localhost:8000/api/delta/brief/${sessionId}`)
+      const res = await axios.get(`https://criciq-backend-8aoj.onrender.com/api/delta/brief/${sessionId}`)
       setBrief(res.data)
       setScreen('result')
 

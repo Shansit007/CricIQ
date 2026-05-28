@@ -34,7 +34,7 @@ function WinProbability() {
     setLoading(true)
     try {
       const response = await axios.post(
-        'http://localhost:8000/api/win-probability/predict',
+        'https://criciq-backend-8aoj.onrender.com/api/win-probability/predict',
         form
       )
       setResult(response.data)

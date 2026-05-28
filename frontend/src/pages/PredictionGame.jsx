@@ -22,7 +22,7 @@ import { createGameChannel } from '../lib/supabase'
 // ============================================
 // CONSTANTS
 // ============================================
-const API = 'http://localhost:8000/api/game'  // backend base URL
+const API = 'https://criciq-backend-8aoj.onrender.com/api/game'  // backend base URL
 const QUESTION_TIMER = 20                      // seconds per question
 
 // ============================================

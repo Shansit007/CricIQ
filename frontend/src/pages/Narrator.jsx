@@ -27,7 +27,7 @@ function Narrator() {
     setLoading(true)
     try {
       const response = await axios.post(
-        'http://localhost:8000/api/narrator/catchup',
+        'https://criciq-backend-8aoj.onrender.com/api/narrator/catchup',
         form
       )
       setResult(response.data.catchup)

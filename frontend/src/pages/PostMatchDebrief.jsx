@@ -22,7 +22,7 @@ import axios from 'axios'
 // CONFIG: Backend API base URL
 // Reads from .env file (VITE_API_URL)
 // ============================================
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'https://criciq-backend-8aoj.onrender.com'
 
 // ============================================
 // CONFIG: Visual styles for each debrief section

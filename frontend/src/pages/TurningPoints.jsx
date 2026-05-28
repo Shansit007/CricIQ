@@ -91,7 +91,7 @@ function TurningPoints() {
   useEffect(() => {
     const fetchMatches = async () => {
       try {
-        const res = await axios.get('http://localhost:8000/api/turning-points/matches')
+        const res = await axios.get('https://criciq-backend-8aoj.onrender.com/api/turning-points/matches')
         setMatches(res.data.matches)
         if (res.data.matches.length > 0) {
           setSelectedMatch(res.data.matches[0])   // auto-select first match
@@ -121,7 +121,7 @@ function TurningPoints() {
 
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/turning-points/analyze/${selectedMatch.id}`
+        `https://criciq-backend-8aoj.onrender.com/api/turning-points/analyze/${selectedMatch.id}`
       )
       setAnalysis(res.data)
       setScreen('result')
