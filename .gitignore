@@ -1,22 +1,20 @@
 # Python
 __pycache__/
 *.py[cod]
-*.env
 venv/
 .venv/
 
 # Environment variables - NEVER upload these to GitHub
+# These contain secret API keys — set them in Render/Vercel dashboard instead
 .env
-# Environment variables - NEVER upload these to GitHub
-.env
-.env.example
+*.env
 
-# Data files - too large for GitHub
+# Data files - too large for GitHub (500K+ ball-by-ball CSV files)
 data/raw/
 
-# ML model files
-*.pkl
-*.joblib
+# ML model files — INCLUDED in git (only ~1.6MB, needed by Render)
+# *.pkl   ← intentionally NOT ignored so Render can use the trained models
+# *.joblib
 
 # Node / React
 node_modules/
@@ -26,5 +24,5 @@ build/
 # Mac junk
 .DS_Store
 
-# Jupyter
+# Jupyter checkpoints
 .ipynb_checkpoints/

@@ -1,13 +1,40 @@
+# ============================================
+# render.yaml — Render deployment config
+#
+# This file tells Render EXACTLY how to:
+#   1. Install our Python dependencies
+#   2. Start our FastAPI server
+#
+# Render reads this file automatically when
+# you connect your GitHub repo.
+# ============================================
+
 services:
+  # Define one web service (our FastAPI backend)
   - type: web
-    name: criciq-backend
-    runtime: python
+    name: criciq-backend                          # name shown in Render dashboard
+    runtime: python                               # we are a Python app
+
+    # Build command — runs ONCE when deploying
+    # Installs all Python packages from requirements.txt
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && python3 -m uvicorn main:app --host 0.0.0.0 --port $PORT
+
+    # Start command — runs to LAUNCH the server
+    # --host 0.0.0.0 → accept connections from anywhere (required on Render)
+    # --port $PORT   → Render injects the PORT env var automatically
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+
+    # Free tier plan
+    plan: free
+
+    # Environment variables — ADD THESE in Render dashboard
+    # (Do NOT put real values here — this file goes to GitHub!)
     envVars:
       - key: GROQ_API_KEY
-        sync: false
+        sync: false               # means: set this manually in Render dashboard
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
+      - key: FRONTEND_URL
+        sync: false               # set this to your Vercel URL after deploying frontend
