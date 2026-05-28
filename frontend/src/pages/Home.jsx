@@ -45,7 +45,7 @@ const features = [
     title: "Turning Points",
     emoji: "♟️",
     description: "3 moments that changed the match",
-    route: "/",
+    route: "/turning-points",   // ← fixed: points to turning points page
     color: "from-yellow-900 to-yellow-700"
   },
   {

@@ -82,3 +82,10 @@ from routers.delta import router as delta_router
 # Connect Delta Brief router
 # Routes: /api/delta/matches, /api/delta/start-session, /api/delta/brief/{id}
 app.include_router(delta_router)
+
+# Import Turning Points router — Feature 5
+from routers.turning_points import router as turning_points_router
+
+# Connect Turning Points router
+# Routes: /api/turning-points/matches, /api/turning-points/analyze/{match_id}
+app.include_router(turning_points_router)

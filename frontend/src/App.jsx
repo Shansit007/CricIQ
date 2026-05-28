@@ -12,7 +12,8 @@ import Home from './pages/Home'
 import WinProbability from './pages/WinProbability'
 import Narrator from './pages/Narrator'
 import PressureScore from './pages/PressureScore'
-import DeltaBriefing from './pages/DeltaBriefing'  // Feature 1 — Delta Brief
+import DeltaBriefing from './pages/DeltaBriefing'    // Feature 1 — Delta Brief
+import TurningPoints from './pages/TurningPoints'    // Feature 5 — Turning Points Map
 
 // Main App component
 function App() {
@@ -35,6 +36,9 @@ function App() {
 
           {/* Feature 1 — Delta Brief "Explain Like I Was Studying" */}
           <Route path="/delta" element={<DeltaBriefing />} />
+
+          {/* Feature 5 — Chess-Style Turning Points Map */}
+          <Route path="/turning-points" element={<TurningPoints />} />
         </Routes>
       </div>
     </Router>
