@@ -75,3 +75,10 @@ from routers.narrator import router as narrator_router
 
 # Connect narrator router
 app.include_router(narrator_router)
+
+# Import Delta Brief™ router — Feature 1
+from routers.delta import router as delta_router
+
+# Connect Delta Brief router
+# Routes: /api/delta/matches, /api/delta/start-session, /api/delta/brief/{id}
+app.include_router(delta_router)

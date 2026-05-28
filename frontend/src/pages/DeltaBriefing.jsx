@@ -1,472 +1,575 @@
 // ============================================
-// DeltaBriefing.jsx — Feature 1: "Explain Like I Was Studying" Mode
-// User sets a timer, comes back, gets ONLY what changed
-// No full scorecard — just the delta (difference)
+// DeltaBriefing.jsx — Feature 1: Delta Brief™
+// "Study peacefully. CricIQ watches for you."
+//
+// 3 SCREENS:
+// SCREEN 1 — SETUP:    Pick match + study timer
+// SCREEN 2 — STUDYING: Countdown + "CricIQ is watching"
+// SCREEN 3 — RESULT:   The full Delta Brief™ output
 // ============================================
 
-// useState lets us store and update data on screen
-import { useState } from 'react'
+// useState = store data that changes on screen
+// useEffect = run code when something changes (like a timer)
+// useRef = store data WITHOUT re-rendering (for timers)
+import { useState, useEffect, useRef } from 'react'
 
-// axios is our HTTP library to call the FastAPI backend
+// axios = HTTP library to call our FastAPI backend
 import axios from 'axios'
 
-// useNavigate lets us go back to Home
+// useNavigate = go back to home page
 import { useNavigate } from 'react-router-dom'
 
 // ============================================
-// TIMER OPTIONS — user picks how long they studied
+// TIMER OPTIONS
+// User picks how long they'll be studying
 // ============================================
 const TIMER_OPTIONS = [
-  { label: "15 mins", value: 15 },
-  { label: "30 mins", value: 30 },
-  { label: "45 mins", value: 45 },
-  { label: "60 mins", value: 60 },
+  { label: "30m",  value: 30,  seconds: 30 * 60  },
+  { label: "45m",  value: 45,  seconds: 45 * 60  },
+  { label: "1hr",  value: 60,  seconds: 60 * 60  },
+  { label: "90m",  value: 90,  seconds: 90 * 60  },
+  { label: "2hr",  value: 120, seconds: 120 * 60 },
+  { label: "3hr",  value: 180, seconds: 180 * 60 },
 ]
+
+// ============================================
+// FOMO LEVEL CONFIG
+// Controls color and feel for each FOMO level
+// ============================================
+const FOMO_CONFIG = {
+  LOW:     { color: "text-green-400",  bg: "bg-green-950 border-green-800",  bar: "bg-green-500",  width: "w-1/4"  },
+  MEDIUM:  { color: "text-yellow-400", bg: "bg-yellow-950 border-yellow-800", bar: "bg-yellow-500", width: "w-2/4"  },
+  HIGH:    { color: "text-orange-400", bg: "bg-orange-950 border-orange-800", bar: "bg-orange-500", width: "w-3/4"  },
+  EXTREME: { color: "text-red-400",    bg: "bg-red-950 border-red-800",       bar: "bg-red-500",    width: "w-full" },
+}
+
+// ============================================
+// STUDY SAFE CONFIG
+// Controls indicator color and message
+// ============================================
+const STUDY_SAFE_CONFIG = {
+  green:  { dot: "bg-green-500",  text: "text-green-400",  label: "SAFE TO KEEP STUDYING"    },
+  orange: { dot: "bg-orange-500", text: "text-orange-400", label: "CHECK OCCASIONALLY"        },
+  red:    { dot: "bg-red-500",    text: "text-red-400",    label: "MATCH ENTERING DANGER ZONE" },
+}
 
 // ============================================
 // MAIN COMPONENT
 // ============================================
 function DeltaBriefing() {
 
-  // navigate lets us go to other pages
-  const navigate = useNavigate()
+  const navigate = useNavigate()   // for back button
 
-  // selectedTimer — how long user was studying (default 30 mins)
-  const [selectedTimer, setSelectedTimer] = useState(30)
+  // ---- WHICH SCREEN TO SHOW ----
+  // 'setup' → user picks match + timer
+  // 'studying' → countdown is running
+  // 'result' → showing the Delta Brief™
+  const [screen, setScreen] = useState('setup')
 
-  // showForm — toggle between "set checkpoint" view and "get delta" view
-  const [showForm, setShowForm] = useState(false)
+  // ---- SETUP SCREEN STATE ----
+  const [matches, setMatches] = useState([])          // list from API
+  const [selectedMatch, setSelectedMatch] = useState(null)   // picked match
+  const [selectedTimer, setSelectedTimer] = useState(TIMER_OPTIONS[0])  // default 30m
+  const [loadingMatches, setLoadingMatches] = useState(true)  // spinner for match list
 
-  // checkpoint — the score when user last checked (saved state)
-  const [checkpoint, setCheckpoint] = useState(null)
+  // ---- SESSION STATE ----
+  const [sessionId, setSessionId] = useState(null)    // session ID from backend
+  const [startingSession, setStartingSession] = useState(false)  // spinner for start btn
 
-  // checkpointForm — form values for saving the checkpoint
-  const [checkpointForm, setCheckpointForm] = useState({
-    score: '',        // score at checkpoint e.g. 85
-    wickets: '',      // wickets at checkpoint e.g. 2
-    overs: '',        // overs at checkpoint e.g. 10.3
-    batting_team: 'Mumbai Indians',  // team batting
-  })
+  // ---- COUNTDOWN TIMER STATE ----
+  const [timeLeft, setTimeLeft] = useState(0)          // seconds remaining
+  const timerRef = useRef(null)                        // reference to interval (so we can clear it)
+  const [timerDone, setTimerDone] = useState(false)    // true when countdown hits 0
 
-  // currentForm — form values for "what is it now"
-  const [currentForm, setCurrentForm] = useState({
-    current_score: '',    // current score
-    current_wickets: '',  // current wickets
-    current_overs: '',    // current overs
-    key_events: '',       // what happened — typed by user or fetched
-  })
-
-  // deltaResult — the AI-generated brief text
-  const [deltaResult, setDeltaResult] = useState(null)
-
-  // loading — shows spinner while AI is thinking
-  const [loading, setLoading] = useState(false)
-
-  // error — shows error message if API call fails
-  const [error, setError] = useState(null)
+  // ---- RESULT STATE ----
+  const [brief, setBrief] = useState(null)             // the Delta Brief™ data
+  const [loadingBrief, setLoadingBrief] = useState(false)   // spinner while AI thinks
+  const [briefError, setBriefError] = useState(null)  // error message
 
   // ============================================
-  // STEP 1: Save checkpoint before studying
+  // FETCH LIVE MATCHES on page load
   // ============================================
-  const saveCheckpoint = () => {
-    // Validate that all fields are filled
-    if (!checkpointForm.score || !checkpointForm.wickets || !checkpointForm.overs) {
-      setError('Please fill in all checkpoint fields!')
-      return
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        // Call our backend to get live matches
+        const res = await axios.get('http://localhost:8000/api/delta/matches')
+        setMatches(res.data.matches)
+
+        // Auto-select first live match
+        const firstLive = res.data.matches.find(m => m.status === 'live')
+        if (firstLive) setSelectedMatch(firstLive)
+
+      } catch (err) {
+        // If backend is down, use mock matches so UI still works
+        setMatches([
+          { id: "mi-vs-csk",   team1: "Mumbai Indians",              team2: "Chennai Super Kings",       status: "live",     emoji: "🔵", venue: "Wankhede Stadium" },
+          { id: "rcb-vs-kkr",  team1: "Royal Challengers Bangalore", team2: "Kolkata Knight Riders",     status: "live",     emoji: "🔴", venue: "Chinnaswamy Stadium" },
+          { id: "gt-vs-rr",    team1: "Gujarat Titans",              team2: "Rajasthan Royals",          status: "upcoming", emoji: "🔵", venue: "Narendra Modi Stadium" },
+        ])
+        setSelectedMatch({ id: "mi-vs-csk", team1: "Mumbai Indians", team2: "Chennai Super Kings", status: "live", emoji: "🔵", venue: "Wankhede Stadium" })
+      }
+      setLoadingMatches(false)
     }
 
-    // Save the checkpoint to state
-    setCheckpoint({
-      score: parseInt(checkpointForm.score),        // convert to number
-      wickets: parseInt(checkpointForm.wickets),
-      overs: parseFloat(checkpointForm.overs),
-      batting_team: checkpointForm.batting_team,
-      savedAt: new Date().toLocaleTimeString(),      // when they saved it
-    })
-
-    // Clear error and go to "check delta" view
-    setError(null)
-    setShowForm(false)  // hide checkpoint form, show timer screen
-  }
+    fetchMatches()
+  }, [])  // [] means run only once when page loads
 
   // ============================================
-  // STEP 2: Get the delta brief (call AI)
+  // COUNTDOWN TIMER
+  // Runs when screen switches to 'studying'
   // ============================================
-  const getDeltaBrief = async () => {
-    // Make sure checkpoint exists
-    if (!checkpoint) {
-      setError('Please set a checkpoint first!')
-      return
-    }
+  useEffect(() => {
+    // Only start timer on studying screen
+    if (screen !== 'studying') return
 
-    // Make sure current score is filled
-    if (!currentForm.current_score || !currentForm.current_wickets || !currentForm.current_overs) {
-      setError('Please enter the current match state!')
-      return
-    }
+    // Clear any existing timer
+    if (timerRef.current) clearInterval(timerRef.current)
 
-    setLoading(true)
-    setError(null)
+    // Start a new countdown
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          // Timer reached 0!
+          clearInterval(timerRef.current)   // stop the interval
+          setTimerDone(true)                // show "ready" UI
+          return 0
+        }
+        return prev - 1   // decrease by 1 second
+      })
+    }, 1000)   // runs every 1000ms = 1 second
+
+    // Cleanup: clear interval when component unmounts
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [screen])  // re-run when screen changes
+
+  // ============================================
+  // START STUDY SESSION
+  // Called when user clicks "🎯 Start Study Session"
+  // ============================================
+  const startSession = async () => {
+    if (!selectedMatch) return
+
+    setStartingSession(true)
 
     try {
-      // Call our FastAPI backend — the delta endpoint in narrator.py
-      const response = await axios.post(
-        'http://localhost:8000/api/narrator/delta',
-        {
-          // Previous state (checkpoint)
-          previous_score: checkpoint.score,
-          previous_wickets: checkpoint.wickets,
-          previous_overs: checkpoint.overs,
+      // Tell backend to save current match snapshot
+      const res = await axios.post('http://localhost:8000/api/delta/start-session', {
+        match_id: selectedMatch.id,
+        study_minutes: selectedTimer.value
+      })
 
-          // Current state (user just entered)
-          current_score: parseInt(currentForm.current_score),
-          current_wickets: parseInt(currentForm.current_wickets),
-          current_overs: parseFloat(currentForm.current_overs),
+      // Save session ID for later
+      setSessionId(res.data.session_id)
 
-          // Match context
-          batting_team: checkpoint.batting_team,
-          key_events: currentForm.key_events || 'No specific events noted',
-        }
-      )
+      // Set the countdown timer
+      setTimeLeft(selectedTimer.seconds)
+      setTimerDone(false)
 
-      // Save the result to show on screen
-      setDeltaResult(response.data)
+      // Switch to studying screen
+      setScreen('studying')
 
     } catch (err) {
-      // Show error if backend is down or returns error
-      setError('Could not reach backend. Is FastAPI running on port 8000?')
+      // Even if backend fails, allow demo to continue
+      // Generate a fake session ID for demo
+      setSessionId('demo-' + Date.now().toString().slice(-6))
+      setTimeLeft(selectedTimer.seconds)
+      setTimerDone(false)
+      setScreen('studying')
     }
 
-    setLoading(false)
+    setStartingSession(false)
   }
 
   // ============================================
-  // RESET — start over
+  // GET DELTA BRIEF™
+  // Called when user clicks "Show What I Missed" or timer ends
+  // ============================================
+  const getDeltaBrief = async () => {
+    if (!sessionId) return
+
+    setLoadingBrief(true)
+    setBriefError(null)
+
+    // Stop the countdown timer
+    if (timerRef.current) clearInterval(timerRef.current)
+
+    try {
+      // Ask backend for the AI-generated Delta Brief™
+      const res = await axios.get(`http://localhost:8000/api/delta/brief/${sessionId}`)
+      setBrief(res.data)
+      setScreen('result')
+
+    } catch (err) {
+      setBriefError('Could not get brief. Is the backend running? Try "uvicorn main:app --reload" in terminal.')
+    }
+
+    setLoadingBrief(false)
+  }
+
+  // ============================================
+  // FORMAT time for countdown display
+  // Converts seconds to MM:SS format
+  // e.g. 1800 → "30:00"
+  // ============================================
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0')  // minutes, 2 digits
+    const s = (seconds % 60).toString().padStart(2, '0')             // seconds, 2 digits
+    return `${m}:${s}`
+  }
+
+  // ============================================
+  // RESET — go back to setup screen
   // ============================================
   const resetAll = () => {
-    setCheckpoint(null)
-    setDeltaResult(null)
-    setError(null)
-    setCurrentForm({
-      current_score: '',
-      current_wickets: '',
-      current_overs: '',
-      key_events: '',
-    })
+    if (timerRef.current) clearInterval(timerRef.current)
+    setSessionId(null)
+    setBrief(null)
+    setBriefError(null)
+    setTimerDone(false)
+    setScreen('setup')
   }
 
   // ============================================
-  // RENDER — what the user sees
+  // RENDER — pick which screen to show
   // ============================================
-  return (
-    <div className="min-h-screen bg-gray-950 text-white p-6">
 
-      {/* ---- TOP BAR: back button + title ---- */}
-      <div className="flex items-center gap-4 mb-8">
-        {/* Back button */}
+  // ---- SCREEN 1: SETUP ----
+  if (screen === 'setup') {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white p-5">
+
+        {/* Top bar: back + title */}
+        <div className="flex items-center gap-4 mb-8">
+          <button onClick={() => navigate('/')} className="text-gray-500 hover:text-white text-xl">←</button>
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-tight">⏱️ Delta Brief™</h1>
+            <p className="text-gray-500 text-sm">Study peacefully. CricIQ watches for you.</p>
+          </div>
+        </div>
+
+        {/* Match selector */}
+        <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-3">
+          Select Match
+        </p>
+
+        {loadingMatches ? (
+          <p className="text-gray-600 text-sm mb-6">Loading matches...</p>
+        ) : (
+          <div className="flex flex-col gap-3 mb-8">
+            {matches.map(match => (
+              <button
+                key={match.id}
+                onClick={() => setSelectedMatch(match)}
+                className={`
+                  rounded-2xl p-4 border text-left transition-all duration-200
+                  ${selectedMatch?.id === match.id
+                    ? 'bg-violet-950 border-violet-500 shadow-lg shadow-violet-900/30'   // selected
+                    : 'bg-gray-900 border-gray-800 hover:border-gray-600'                  // not selected
+                  }
+                `}
+              >
+                <div className="flex items-center justify-between">
+                  {/* Team names */}
+                  <div>
+                    <p className="text-white font-bold text-base">
+                      {match.emoji} {match.team1} <span className="text-gray-500">vs</span> {match.team2}
+                    </p>
+                    <p className="text-gray-500 text-xs mt-0.5">{match.venue}</p>
+                  </div>
+
+                  {/* Live / Upcoming badge */}
+                  <span className={`
+                    text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide
+                    ${match.status === 'live'
+                      ? 'bg-green-900 text-green-400 border border-green-700'
+                      : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }
+                  `}>
+                    {match.status === 'live' ? '● LIVE' : 'UPCOMING'}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Study duration picker */}
+        <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-3">
+          How long are you studying?
+        </p>
+
+        <div className="flex flex-wrap gap-2 mb-10">
+          {TIMER_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setSelectedTimer(opt)}
+              className={`
+                px-5 py-2 rounded-xl font-bold text-sm border transition-all
+                ${selectedTimer.value === opt.value
+                  ? 'bg-violet-600 border-violet-400 text-white'
+                  : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-violet-600'
+                }
+              `}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* CTA button */}
         <button
-          onClick={() => navigate('/')}
-          className="text-gray-400 hover:text-white text-2xl"
+          onClick={startSession}
+          disabled={!selectedMatch || startingSession}
+          className={`
+            w-full py-5 rounded-2xl font-bold text-lg transition-all duration-200
+            ${selectedMatch
+              ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/40'
+              : 'bg-gray-800 text-gray-600 cursor-not-allowed'
+            }
+          `}
         >
-          ←
+          {startingSession ? '⏳ Starting session...' : '🎯 Start Study Session'}
         </button>
 
-        {/* Page title */}
-        <div>
-          <h1 className="text-3xl font-bold text-white">
-            ⏱️ Delta Brief
-          </h1>
-          <p className="text-gray-400 text-sm mt-1">
-            "Explain Like I Was Studying" — only what changed
+        {/* Subtext */}
+        {selectedMatch && (
+          <p className="text-center text-gray-600 text-xs mt-3">
+            CricIQ will silently track {selectedMatch.team1} vs {selectedMatch.team2} for {selectedTimer.label}
           </p>
-        </div>
+        )}
       </div>
+    )
+  }
 
-      {/* ---- RESULT SCREEN (shown after AI replies) ---- */}
-      {deltaResult && (
-        <div className="mb-8">
+  // ---- SCREEN 2: STUDYING (countdown) ----
+  if (screen === 'studying') {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-6">
 
-          {/* Big result card */}
-          <div className="bg-gradient-to-br from-purple-900 to-purple-800 rounded-2xl p-6 border border-purple-600 mb-4">
+        {/* Pulsing eye icon */}
+        <div className={`text-6xl mb-6 ${timerDone ? '' : 'animate-pulse'}`}>
+          {timerDone ? '🎉' : '👁️'}
+        </div>
 
-            {/* "You were away for X mins" header */}
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">⏱️</span>
-              <span className="text-purple-300 text-sm font-semibold uppercase tracking-wide">
-                You were studying for {selectedTimer} mins
-              </span>
-            </div>
+        {/* Status text */}
+        <h2 className="text-xl font-bold text-white mb-2 text-center">
+          {timerDone ? 'Your brief is ready!' : 'CricIQ is watching...'}
+        </h2>
 
-            {/* The AI delta brief text */}
-            <p className="text-white text-lg leading-relaxed whitespace-pre-line">
-              {deltaResult.delta_brief}
+        {/* Match name */}
+        <p className="text-gray-500 text-sm mb-10 text-center">
+          {selectedMatch?.team1} vs {selectedMatch?.team2}
+        </p>
+
+        {/* Countdown circle */}
+        {!timerDone && (
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl px-12 py-8 mb-8 text-center">
+            <p className="text-5xl font-mono font-bold text-violet-400 tracking-wider">
+              {formatTime(timeLeft)}
+            </p>
+            <p className="text-gray-600 text-sm mt-2">remaining in session</p>
+          </div>
+        )}
+
+        {/* Study tip */}
+        {!timerDone && (
+          <p className="text-gray-600 text-sm text-center mb-8 max-w-xs">
+            📚 Focus on your studies.<br />
+            We'll brief you on everything that mattered.
+          </p>
+        )}
+
+        {/* Error if brief failed */}
+        {briefError && (
+          <p className="text-red-400 text-sm text-center mb-4 max-w-xs">{briefError}</p>
+        )}
+
+        {/* Main CTA button */}
+        <button
+          onClick={getDeltaBrief}
+          disabled={loadingBrief}
+          className={`
+            w-full max-w-sm py-5 rounded-2xl font-bold text-lg transition-all
+            ${timerDone
+              ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/40 animate-pulse'
+              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+            }
+          `}
+        >
+          {loadingBrief
+            ? '🧠 AI is generating your brief...'
+            : timerDone
+              ? '📖 Show My Delta Brief™'
+              : '🔍 Peek Early'
+          }
+        </button>
+
+        {/* Back to setup */}
+        <button
+          onClick={resetAll}
+          className="text-gray-600 hover:text-gray-400 text-sm mt-4"
+        >
+          ↩ Cancel session
+        </button>
+      </div>
+    )
+  }
+
+  // ---- SCREEN 3: RESULT (Delta Brief™) ----
+  if (screen === 'result' && brief) {
+
+    // Get config objects for display
+    const fomoConfig = FOMO_CONFIG[brief.fomo_level] || FOMO_CONFIG.MEDIUM
+    const studySafeConfig = STUDY_SAFE_CONFIG[brief.study_safe] || STUDY_SAFE_CONFIG.orange
+
+    return (
+      <div className="min-h-screen bg-gray-950 text-white p-5">
+
+        {/* Top bar */}
+        <div className="flex items-center gap-4 mb-6">
+          <button onClick={resetAll} className="text-gray-500 hover:text-white text-xl">←</button>
+          <div>
+            <h1 className="text-xl font-bold text-white">📚 Delta Brief™</h1>
+            <p className="text-gray-500 text-xs">
+              {brief.meta?.match} · away for {brief.meta?.away_for_minutes} mins
             </p>
           </div>
-
-          {/* Score change pill badges */}
-          <div className="flex gap-4 flex-wrap mb-6">
-
-            {/* Runs scored */}
-            <div className="bg-green-900 border border-green-700 rounded-xl px-4 py-2 text-center">
-              <p className="text-green-300 text-xs uppercase tracking-wide">Runs Scored</p>
-              <p className="text-green-400 text-2xl font-bold">
-                +{deltaResult.score_change}
-              </p>
-            </div>
-
-            {/* Wickets fallen */}
-            <div className="bg-red-900 border border-red-700 rounded-xl px-4 py-2 text-center">
-              <p className="text-red-300 text-xs uppercase tracking-wide">Wickets Fallen</p>
-              <p className="text-red-400 text-2xl font-bold">
-                {deltaResult.wickets_fallen > 0 ? `-${deltaResult.wickets_fallen}` : '0'}
-              </p>
-            </div>
-
-            {/* Time studied badge */}
-            <div className="bg-purple-900 border border-purple-700 rounded-xl px-4 py-2 text-center">
-              <p className="text-purple-300 text-xs uppercase tracking-wide">You Studied</p>
-              <p className="text-purple-400 text-2xl font-bold">
-                {selectedTimer}m
-              </p>
-            </div>
-
-          </div>
-
-          {/* Check Again button */}
-          <button
-            onClick={resetAll}
-            className="bg-purple-700 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-xl w-full"
-          >
-            🔄 Set New Checkpoint
-          </button>
         </div>
-      )}
 
-      {/* ---- MAIN FLOW (shown when no result yet) ---- */}
-      {!deltaResult && (
-        <>
+        {/* ---- STUDY SAFE INDICATOR ---- */}
+        {/* Big banner at top so user knows instantly */}
+        <div className={`
+          rounded-2xl p-4 border mb-4 flex items-center gap-3
+          ${studySafeConfig.text === 'text-green-400' ? 'bg-green-950 border-green-800' : ''}
+          ${studySafeConfig.text === 'text-orange-400' ? 'bg-orange-950 border-orange-800' : ''}
+          ${studySafeConfig.text === 'text-red-400' ? 'bg-red-950 border-red-800' : ''}
+        `}>
+          {/* Colored dot */}
+          <div className={`w-3 h-3 rounded-full flex-shrink-0 ${studySafeConfig.dot}`}></div>
+          <div>
+            <p className={`font-bold text-sm uppercase tracking-wide ${studySafeConfig.text}`}>
+              {studySafeConfig.label}
+            </p>
+            <p className="text-gray-400 text-xs mt-0.5">{brief.study_safe_reason}</p>
+          </div>
+        </div>
 
-          {/* ---- TIMER PICKER ---- */}
-          <div className="mb-8">
-            <h2 className="text-gray-300 text-sm font-semibold uppercase tracking-wide mb-3">
-              📚 How long are you studying?
-            </h2>
-            <div className="flex gap-3 flex-wrap">
-              {TIMER_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setSelectedTimer(opt.value)}
-                  className={`
-                    px-5 py-2 rounded-xl font-bold border transition-all
-                    ${selectedTimer === opt.value
-                      ? 'bg-purple-600 border-purple-400 text-white'   // selected style
-                      : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-purple-500'  // normal style
-                    }
-                  `}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+        {/* ---- WHAT CHANGED ---- */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-4">
+          <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-4">
+            🔥 What Changed
+          </p>
+          <div className="flex flex-col gap-3">
+            {/* Each bullet point from AI */}
+            {(brief.what_changed || []).map((point, i) => (
+              <div key={i} className="flex items-start gap-3">
+                {/* Bullet dot */}
+                <div className="w-1.5 h-1.5 rounded-full bg-violet-500 flex-shrink-0 mt-2"></div>
+                {/* The AI-generated point */}
+                <p className="text-gray-200 text-sm leading-relaxed">{point}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ---- MATCH MOOD + PRESSURE ALERT (side by side) ---- */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+
+          {/* Match Mood Engine */}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
+            <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">🎭 Match Mood</p>
+            <p className="text-white font-bold text-lg">{brief.match_mood}</p>
           </div>
 
-          {/* ---- STEP 1: SET CHECKPOINT ---- */}
-          {!checkpoint && (
-            <div className="bg-gray-900 rounded-2xl p-6 border border-gray-700 mb-6">
+          {/* Current score */}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
+            <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">📊 Score Now</p>
+            <p className="text-white font-bold text-lg">{brief.meta?.current_score}</p>
+          </div>
+        </div>
 
-              <h2 className="text-lg font-bold text-white mb-1">
-                Step 1 — Save Checkpoint Before Studying
-              </h2>
-              <p className="text-gray-400 text-sm mb-5">
-                Enter the current score before you go study. We'll compare when you come back!
-              </p>
+        {/* ---- PRESSURE ALERT ---- */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-4">
+          <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-2">
+            ⚡ Pressure Alert
+          </p>
+          <p className="text-gray-200 text-sm leading-relaxed italic">
+            "{brief.pressure_alert}"
+          </p>
+        </div>
 
-              {/* Batting team selector */}
-              <div className="mb-4">
-                <label className="block text-gray-400 text-sm mb-1">Batting Team</label>
-                <select
-                  value={checkpointForm.batting_team}
-                  onChange={(e) => setCheckpointForm({ ...checkpointForm, batting_team: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-3 text-white"
-                >
-                  {/* IPL teams */}
-                  {[
-                    'Mumbai Indians', 'Chennai Super Kings', 'Royal Challengers Bangalore',
-                    'Kolkata Knight Riders', 'Delhi Capitals', 'Rajasthan Royals',
-                    'Punjab Kings', 'Sunrisers Hyderabad', 'Lucknow Super Giants',
-                    'Gujarat Titans'
-                  ].map(team => (
-                    <option key={team} value={team}>{team}</option>
-                  ))}
-                </select>
-              </div>
+        {/* ---- FOMO METER™ ---- */}
+        <div className={`rounded-2xl p-5 border mb-4 ${fomoConfig.bg}`}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest">
+              📊 FOMO Meter™
+            </p>
+            {/* FOMO level badge */}
+            <span className={`font-bold text-sm ${fomoConfig.color}`}>
+              {brief.fomo_emoji} {brief.fomo_level}
+            </span>
+          </div>
 
-              {/* Score, Wickets, Overs in a row */}
-              <div className="grid grid-cols-3 gap-3 mb-5">
+          {/* FOMO progress bar */}
+          <div className="bg-gray-800 rounded-full h-2 mb-3">
+            <div className={`h-2 rounded-full transition-all ${fomoConfig.bar} ${fomoConfig.width}`}></div>
+          </div>
 
-                {/* Score input */}
-                <div>
-                  <label className="block text-gray-400 text-sm mb-1">Score</label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 85"
-                    value={checkpointForm.score}
-                    onChange={(e) => setCheckpointForm({ ...checkpointForm, score: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-3 text-white text-center"
-                  />
-                </div>
+          {/* FOMO reason text */}
+          <p className="text-gray-300 text-sm">{brief.fomo_reason}</p>
+        </div>
 
-                {/* Wickets input */}
-                <div>
-                  <label className="block text-gray-400 text-sm mb-1">Wickets</label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 2"
-                    min="0" max="10"
-                    value={checkpointForm.wickets}
-                    onChange={(e) => setCheckpointForm({ ...checkpointForm, wickets: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-3 text-white text-center"
-                  />
-                </div>
+        {/* ---- SHOULD YOU WATCH NOW?™ ---- */}
+        <div className={`
+          rounded-2xl p-5 border mb-4
+          ${brief.watch_now
+            ? 'bg-red-950 border-red-800'
+            : 'bg-gray-900 border-gray-800'
+          }
+        `}>
+          <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-2">
+            📺 Should You Watch?
+          </p>
+          <p className={`font-bold text-lg mb-1 ${brief.watch_now ? 'text-red-400' : 'text-green-400'}`}>
+            {brief.watch_now ? '🔴 WATCH NOW' : '🟢 Keep Studying'}
+          </p>
+          <p className="text-gray-300 text-sm">{brief.watch_reason}</p>
+        </div>
 
-                {/* Overs input */}
-                <div>
-                  <label className="block text-gray-400 text-sm mb-1">Overs</label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 10.3"
-                    step="0.1"
-                    value={checkpointForm.overs}
-                    onChange={(e) => setCheckpointForm({ ...checkpointForm, overs: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-3 text-white text-center"
-                  />
-                </div>
-              </div>
+        {/* ---- ONE-LINE HOSTEL SUMMARY™ ---- */}
+        <div className="bg-gray-900 border border-violet-900 rounded-2xl p-5 mb-6">
+          <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-2">
+            💬 Hostel Summary™
+          </p>
+          <p className="text-white text-base font-medium leading-relaxed">
+            {brief.hostel_summary}
+          </p>
+        </div>
 
-              {/* Error message */}
-              {error && (
-                <p className="text-red-400 text-sm mb-4">⚠️ {error}</p>
-              )}
+        {/* ---- NEW SESSION BUTTON ---- */}
+        <button
+          onClick={resetAll}
+          className="w-full bg-violet-700 hover:bg-violet-600 text-white font-bold py-4 rounded-2xl text-base transition-all"
+        >
+          🔄 New Study Session
+        </button>
 
-              {/* Save checkpoint button */}
-              <button
-                onClick={saveCheckpoint}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl"
-              >
-                📌 Save Checkpoint &amp; Start Studying
-              </button>
-            </div>
-          )}
+        <p className="text-center text-gray-700 text-xs mt-4 pb-4">
+          CricIQ Delta Brief™ · powered by Groq LLaMA 3
+        </p>
+      </div>
+    )
+  }
 
-          {/* ---- CHECKPOINT SAVED SCREEN ---- */}
-          {checkpoint && (
-            <div>
-
-              {/* Checkpoint badge */}
-              <div className="bg-green-950 border border-green-800 rounded-2xl p-4 mb-6 flex items-center gap-4">
-                <span className="text-3xl">✅</span>
-                <div>
-                  <p className="text-green-400 font-bold">Checkpoint Saved at {checkpoint.savedAt}</p>
-                  <p className="text-green-300 text-sm">
-                    {checkpoint.batting_team} — {checkpoint.score}/{checkpoint.wickets} in {checkpoint.overs} overs
-                  </p>
-                </div>
-              </div>
-
-              {/* Step 2 — Enter current state */}
-              <div className="bg-gray-900 rounded-2xl p-6 border border-gray-700">
-
-                <h2 className="text-lg font-bold text-white mb-1">
-                  Step 2 — Back from studying? Enter current score!
-                </h2>
-                <p className="text-gray-400 text-sm mb-5">
-                  What does the score look like now? We'll brief you on what changed.
-                </p>
-
-                {/* Current score fields */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
-
-                  <div>
-                    <label className="block text-gray-400 text-sm mb-1">Current Score</label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 142"
-                      value={currentForm.current_score}
-                      onChange={(e) => setCurrentForm({ ...currentForm, current_score: e.target.value })}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-3 text-white text-center"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-400 text-sm mb-1">Wickets</label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 5"
-                      min="0" max="10"
-                      value={currentForm.current_wickets}
-                      onChange={(e) => setCurrentForm({ ...currentForm, current_wickets: e.target.value })}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-3 text-white text-center"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-400 text-sm mb-1">Current Overs</label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 16.2"
-                      step="0.1"
-                      value={currentForm.current_overs}
-                      onChange={(e) => setCurrentForm({ ...currentForm, current_overs: e.target.value })}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-3 text-white text-center"
-                    />
-                  </div>
-                </div>
-
-                {/* Key events — optional */}
-                <div className="mb-5">
-                  <label className="block text-gray-400 text-sm mb-1">
-                    Key Events (optional — what happened?)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Kohli out for 45, Dhoni hit 2 sixes"
-                    value={currentForm.key_events}
-                    onChange={(e) => setCurrentForm({ ...currentForm, key_events: e.target.value })}
-                    className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-3 text-white"
-                  />
-                </div>
-
-                {/* Error */}
-                {error && (
-                  <p className="text-red-400 text-sm mb-4">⚠️ {error}</p>
-                )}
-
-                {/* Get Delta button */}
-                <button
-                  onClick={getDeltaBrief}
-                  disabled={loading}
-                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white font-bold py-4 rounded-xl text-lg"
-                >
-                  {loading ? '⏳ AI is thinking...' : '⚡ Get My Delta Brief'}
-                </button>
-
-                {/* Reset link */}
-                <button
-                  onClick={resetAll}
-                  className="w-full text-gray-500 hover:text-gray-300 text-sm mt-3 py-2"
-                >
-                  ↩ Start Over
-                </button>
-              </div>
-            </div>
-          )}
-
-        </>
-      )}
-
+  // Fallback loading state
+  return (
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <p className="text-gray-500">Loading...</p>
     </div>
   )
 }
 
-// Export so App.jsx can use this page
 export default DeltaBriefing
