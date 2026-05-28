@@ -89,3 +89,17 @@ from routers.turning_points import router as turning_points_router
 # Connect Turning Points router
 # Routes: /api/turning-points/matches, /api/turning-points/analyze/{match_id}
 app.include_router(turning_points_router)
+
+# Import Prediction Game router — Feature 6
+from routers.prediction_game import router as prediction_game_router
+
+# Connect Prediction Game router
+# Routes: /api/game/matches, /api/game/create, /api/game/join, etc.
+app.include_router(prediction_game_router)
+
+# Import Post-Match Debrief router — Feature 7
+from routers.debrief import router as debrief_router
+
+# Connect Debrief router
+# Routes: /api/debrief/matches, /api/debrief/generate/{match_id}
+app.include_router(debrief_router)

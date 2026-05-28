@@ -53,7 +53,7 @@ const features = [
     title: "Friend Game",
     emoji: "👥",
     description: "Predict with friends, win Cricket Brain title",
-    route: "/",
+    route: "/game",     // ← fixed: points to the Prediction Game page
     color: "from-pink-900 to-pink-700"
   },
   {
@@ -61,7 +61,7 @@ const features = [
     title: "60s Debrief",
     emoji: "📋",
     description: "Full match summary in 60 seconds",
-    route: "/",
+    route: "/debrief",  // ← fixed: points to the Post-Match Debrief page
     color: "from-orange-900 to-orange-700"
   }
 ]

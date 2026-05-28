@@ -101,8 +101,6 @@ def shap_to_english(feature_name, shap_value):
 # POST endpoint — frontend sends match situation, we return probability
 @router.post("/predict")
 def predict_win_probability(situation: MatchSituation):
-    @router.post("/predict")
-def predict_win_probability(situation: MatchSituation):
     # Check if model is loaded
     if model is None:
         return {"error": "Model not loaded yet", 

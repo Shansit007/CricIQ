@@ -12,8 +12,10 @@ import Home from './pages/Home'
 import WinProbability from './pages/WinProbability'
 import Narrator from './pages/Narrator'
 import PressureScore from './pages/PressureScore'
-import DeltaBriefing from './pages/DeltaBriefing'    // Feature 1 — Delta Brief
-import TurningPoints from './pages/TurningPoints'    // Feature 5 — Turning Points Map
+import DeltaBriefing from './pages/DeltaBriefing'        // Feature 1 — Delta Brief
+import TurningPoints from './pages/TurningPoints'        // Feature 5 — Turning Points Map
+import PredictionGame from './pages/PredictionGame'      // Feature 6 — Friend Prediction Game
+import PostMatchDebrief from './pages/PostMatchDebrief'  // Feature 7 — 60s Post-Match Debrief
 
 // Main App component
 function App() {
@@ -39,6 +41,12 @@ function App() {
 
           {/* Feature 5 — Chess-Style Turning Points Map */}
           <Route path="/turning-points" element={<TurningPoints />} />
+
+          {/* Feature 6 — Friend Group Prediction Game */}
+          <Route path="/game" element={<PredictionGame />} />
+
+          {/* Feature 7 — Post-Match 60-Second Debrief */}
+          <Route path="/debrief" element={<PostMatchDebrief />} />
         </Routes>
       </div>
     </Router>
