@@ -37,36 +37,42 @@ export default function Home() {
       title: 'Win Probability',
       desc: 'XGBoost ML model trained on 500K+ IPL balls. Updated after every delivery.',
       color: 'border-accent-cyan/30',
+      path: '/predict',
     },
     {
       icon: '🤖',
       title: 'AI Commentary',
       desc: 'Llama 3.3 70B generates ball-by-ball commentary like Harsha Bhogle.',
       color: 'border-accent-gold/30',
+      path: '/matches',
     },
     {
       icon: '🔍',
       title: 'SHAP Explainability',
       desc: 'Know exactly WHY the probability changed. Plain English, not ML jargon.',
       color: 'border-blue-500/30',
+      path: '/predict',
     },
     {
       icon: '⚔️',
       title: 'Rivalry Intelligence',
       desc: 'Head-to-head history, year-by-year trends, top performers in the rivalry.',
       color: 'border-purple-500/30',
+      path: '/rivalry',
     },
     {
       icon: '🏏',
       title: 'Fantasy XI',
       desc: 'Budget-constrained optimizer picks your best Dream11 team automatically.',
       color: 'border-green-500/30',
+      path: '/fantasy',
     },
     {
       icon: '⚡',
       title: 'Live WebSocket',
       desc: 'Real score every 60s from CricAPI. Ball-by-ball simulation in between.',
       color: 'border-accent-red/30',
+      path: '/matches',
     },
   ];
 
@@ -180,14 +186,16 @@ export default function Home() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {features.map((feat, i) => (
-            <div
+            <Link
               key={i}
-              className={`criciq-card border ${feat.color} hover:-translate-y-1 transition-transform duration-200`}
+              to={feat.path}
+              className={`criciq-card border ${feat.color} hover:-translate-y-1 hover:border-opacity-70 transition-all duration-200 block group`}
             >
               <span className="text-3xl mb-3 block">{feat.icon}</span>
-              <h3 className="text-text-primary font-bold text-base mb-1">{feat.title}</h3>
+              <h3 className="text-text-primary font-bold text-base mb-1 group-hover:text-accent-cyan transition-colors">{feat.title}</h3>
               <p className="text-text-secondary text-sm leading-relaxed">{feat.desc}</p>
-            </div>
+              <p className="text-accent-cyan text-xs mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Explore →</p>
+            </Link>
           ))}
         </div>
       </section>

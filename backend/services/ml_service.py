@@ -92,20 +92,16 @@ def predict(
     rrr = round((runs_needed / max(balls_remaining, 1)) * 6, 2)
 
     # ---- Build feature vector ----
-    # The model was trained with these exact features in this exact order
+    # MUST match the exact 6 features the model was trained on:
+    # cum_runs, cum_wickets, balls_remaining, runs_needed, ball_number, target
+    ball_number = int(overs) * 6 + round((overs % 1) * 10)  # total balls bowled
     features = np.array([[
-        current_score,       # runs scored so far
-        wickets,             # wickets fallen
-        overs,               # overs completed
-        target,              # target to chase
-        runs_needed,         # runs still needed
-        wickets_in_hand,     # wickets remaining
-        balls_remaining,     # balls left
-        crr,                 # current run rate
-        rrr,                 # required run rate
-        _encode_format(format),       # T20=0, ODI=1, Test=2
-        _encode_pitch(pitch_type),    # flat=0, green=1, dusty=2, fast=3
-        _compute_pressure(runs_needed, balls_remaining, wickets_in_hand),
+        current_score,   # cum_runs
+        wickets,         # cum_wickets
+        balls_remaining, # balls_remaining
+        runs_needed,     # runs_needed
+        ball_number,     # ball_number
+        target,          # target
     ]])
 
     # ---- Get prediction ----

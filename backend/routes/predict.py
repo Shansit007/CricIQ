@@ -67,4 +67,6 @@ async def predict_win_probability(body: PredictRequest):
         }
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()   # prints full error in terminal
         raise HTTPException(status_code=500, detail=str(e))
