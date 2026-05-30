@@ -45,26 +45,21 @@ export default function WinGauge({ probability, battingTeam, bowlingTeam, moment
   const color = getGaugeColor(probability);
   const percent = Math.round(probability * 100);
 
-  // ---- SVG arc calculations ----
-  // The arc is a semicircle from left (0%) to right (100%)
-  // cx=120, cy=120 is the center, r=80 is the radius
+  // ---- SVG arc using strokeDasharray trick ----
+  // Draw a full semicircle, then use dasharray to "fill" only the probability portion
+  // This is the cleanest approach — no arc math bugs
   const cx = 120, cy = 120, r = 80;
 
-  // Convert probability to SVG arc path
-  // arc starts at leftmost point (180°) and sweeps to current probability
-  const startAngle = Math.PI;                              // leftmost = 180 degrees
-  const endAngle   = Math.PI * (1 - probability);         // current probability position
-  const x1 = cx + r * Math.cos(startAngle);               // arc start x
-  const y1 = cy + r * Math.sin(startAngle);               // arc start y
-  const x2 = cx + r * Math.cos(endAngle);                 // arc end x
-  const y2 = cy + r * Math.sin(endAngle);                 // arc end y
-  const largeArc = probability > 0.5 ? 1 : 0;            // SVG flag for arc > 180°
+  // Circumference of a full circle = 2πr, but we only want the top semicircle = πr
+  const semicircumference = Math.PI * r;   // ~251px for r=80
 
-  // The colored filled arc path
-  const arcPath = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 0 ${x2} ${y2}`;
+  // How much of the semicircle to fill = probability * full semicircle length
+  const filledLength = probability * semicircumference;
+  const gapLength    = semicircumference - filledLength;
 
-  // The full background arc (gray, 180°)
-  const bgArcPath = `M ${cx - r} ${cy} A ${r} ${r} 0 1 1 ${cx + r} ${cy}`;
+  // The arc path — a simple semicircle from left to right
+  const bgArcPath  = `M ${cx - r} ${cy} A ${r} ${r} 0 1 1 ${cx + r} ${cy}`;
+  const fillArcPath = bgArcPath;  // same path, different strokeDasharray
 
   // ---- Needle position ----
   // Needle starts at center and points toward the probability position
@@ -95,14 +90,18 @@ export default function WinGauge({ probability, battingTeam, bowlingTeam, moment
             strokeLinecap="round"
           />
 
-          {/* Colored arc showing current win probability */}
+          {/* Colored arc — fills from left up to current probability using dasharray */}
           <path
-            d={arcPath}
+            d={fillArcPath}
             fill="none"
             stroke={color}
             strokeWidth="16"
             strokeLinecap="round"
-            style={{ filter: `drop-shadow(0 0 6px ${color}88)` }}
+            strokeDasharray={`${filledLength} ${semicircumference}`}
+            style={{
+              filter: `drop-shadow(0 0 6px ${color}88)`,
+              transition: 'stroke-dasharray 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
           />
 
           {/* Needle */}
