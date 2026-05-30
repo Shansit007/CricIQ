@@ -1,105 +1,115 @@
 # ============================================
-# main.py — CricIQ FastAPI Backend Entry Point
-# This is the main file that starts our server
+# main.py — CricIQ FastAPI Backend (Upgraded v2)
+# Includes: REST API + Socket.io WebSocket + ML
 # ============================================
 
-# FastAPI is our web framework — like Express in Node.js
 from fastapi import FastAPI
-
-# CORSMiddleware allows our React frontend to talk to this backend
 from fastapi.middleware.cors import CORSMiddleware
-
-# load_dotenv reads our .env file and loads the keys
 from dotenv import load_dotenv
-
-# os helps us read environment variables
 import os
 
-# Load all keys from .env file into memory
+# Load .env file (CRICAPI_KEY, GROQ_API_KEY, etc.)
 load_dotenv()
 
-# Create the FastAPI app — this is our server
+# ============================================
+# Create FastAPI app
+# ============================================
 app = FastAPI(
-    title="CricIQ API",           # name of our API
-    description="AI-powered cricket intelligence backend",
-    version="1.0.0"
+    title="CricIQ API",
+    description="AI-powered cricket intelligence platform",
+    version="2.0.0",
 )
 
-# Allow React frontend to talk to this backend
-# Without this, browser blocks the connection
+# ---- CORS — allow React frontend to call this API ----
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins = which websites can talk to us
     allow_origins=[
-        "http://localhost:5173",   # React dev server
-        "http://localhost:3000",   # alternate React port
-        os.getenv("FRONTEND_URL", "*")  # production URL
+        "http://localhost:5173",          # Vite dev server
+        "http://localhost:3000",          # alternate
+        os.getenv("FRONTEND_URL", "*"),   # production Vercel URL
     ],
-    allow_credentials=True,   # allow cookies
-    allow_methods=["*"],      # allow all HTTP methods
-    allow_headers=["*"],      # allow all headers
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Basic health check route
-# When someone visits /health, server says it's alive
-@app.get("/health")
-def health_check():
-    return {
-        "status": "CricIQ backend is running! 🏏",
-        "version": "1.0.0"
-    }
+# ============================================
+# Startup event — load ML model + datasets once
+# ============================================
+@app.on_event("startup")
+async def startup():
+    """Load ML model and datasets into memory on startup."""
+    print("[Startup] Loading ML model...")
+    from services.ml_service import load_model
+    load_model()
 
-# Root route
+    print("[Startup] Loading datasets...")
+    from services.data_service import load_datasets
+    load_datasets()
+
+    print("[Startup] CricIQ backend ready! 🏏")
+
+
+# ============================================
+# Register new route files (v2 features)
+# ============================================
+from routes.matches    import router as matches_router
+from routes.predict    import router as predict_router
+from routes.commentary import router as commentary_router
+from routes.rivalry    import router as rivalry_router
+from routes.fantasy    import router as fantasy_router
+
+app.include_router(matches_router)
+app.include_router(predict_router)
+app.include_router(commentary_router)
+app.include_router(rivalry_router)
+app.include_router(fantasy_router)
+
+# ============================================
+# Keep old routers from Phase 1 (backward compat)
+# ============================================
+from routers.win_probability import router as old_win_prob_router
+from routers.narrator        import router as old_narrator_router
+from routers.delta           import router as old_delta_router
+from routers.turning_points  import router as old_turning_points_router
+from routers.prediction_game import router as old_prediction_game_router
+from routers.debrief         import router as old_debrief_router
+
+app.include_router(old_win_prob_router)
+app.include_router(old_narrator_router)
+app.include_router(old_delta_router)
+app.include_router(old_turning_points_router)
+app.include_router(old_prediction_game_router)
+app.include_router(old_debrief_router)
+
+# ============================================
+# Health check routes
+# ============================================
 @app.get("/")
 def root():
-    return {
-        "message": "Welcome to CricIQ API",
-        "docs": "/docs",        # FastAPI auto-generates docs here
-        "health": "/health"
-    }
+    return {"message": "CricIQ API v2.0 🏏", "docs": "/docs", "health": "/health"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "version": "2.0.0"}
 
 # ============================================
-# Import and connect all routers
-# Each router handles one feature of CricIQ
+# Socket.io — wrap FastAPI with socketio ASGI
+# Adds WebSocket support at /ws/socket.io
 # ============================================
+import socketio
+from websocket.match_socket import sio
 
-# Import win probability router
-from routers.win_probability import router as win_probability_router
+# socket_app handles BOTH HTTP (FastAPI) and WebSocket (Socket.io)
+# on the same port (8000)
+socket_app = socketio.ASGIApp(
+    socketio_server=sio,
+    other_asgi_app=app,
+    socketio_path='/ws/socket.io',
+)
 
-# Connect router to main app
-# Now /api/win-probability/predict will work!
-app.include_router(win_probability_router)
-
-# Import narrator router
-from routers.narrator import router as narrator_router
-
-# Connect narrator router
-app.include_router(narrator_router)
-
-# Import Delta Brief™ router — Feature 1
-from routers.delta import router as delta_router
-
-# Connect Delta Brief router
-# Routes: /api/delta/matches, /api/delta/start-session, /api/delta/brief/{id}
-app.include_router(delta_router)
-
-# Import Turning Points router — Feature 5
-from routers.turning_points import router as turning_points_router
-
-# Connect Turning Points router
-# Routes: /api/turning-points/matches, /api/turning-points/analyze/{match_id}
-app.include_router(turning_points_router)
-
-# Import Prediction Game router — Feature 6
-from routers.prediction_game import router as prediction_game_router
-
-# Connect Prediction Game router
-# Routes: /api/game/matches, /api/game/create, /api/game/join, etc.
-app.include_router(prediction_game_router)
-
-# Import Post-Match Debrief router — Feature 7
-from routers.debrief import router as debrief_router
-
-# Connect Debrief router
-# Routes: /api/debrief/matches, /api/debrief/generate/{match_id}
-app.include_router(debrief_router)
+# ============================================
+# HOW TO RUN (always use socket_app):
+#   cd backend
+#   uvicorn main:socket_app --reload --port 8000
+# ============================================

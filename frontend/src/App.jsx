@@ -1,54 +1,59 @@
 // ============================================
-// App.jsx — Main CricIQ App with routing
-// Each feature gets its own page/route
+// App.jsx — Main CricIQ App with updated routing
+// All 6 pages wired up here
 // ============================================
 
-// BrowserRouter enables page navigation
-// Routes and Route define each page
+// React Router imports
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
-// Import all our feature pages
-import Home from './pages/Home'
-import WinProbability from './pages/WinProbability'
-import Narrator from './pages/Narrator'
-import PressureScore from './pages/PressureScore'
-import DeltaBriefing from './pages/DeltaBriefing'        // Feature 1 — Delta Brief
-import TurningPoints from './pages/TurningPoints'        // Feature 5 — Turning Points Map
-import PredictionGame from './pages/PredictionGame'      // Feature 6 — Friend Prediction Game
-import PostMatchDebrief from './pages/PostMatchDebrief'  // Feature 7 — 60s Post-Match Debrief
+// New upgraded pages (TypeScript components work fine in JSX app)
+import Home      from './pages/Home.tsx'
+import Matches   from './pages/Matches.tsx'
+import LiveMatch from './pages/LiveMatch.tsx'
+import Predict   from './pages/Predict.tsx'
+import Rivalry   from './pages/Rivalry.tsx'
+import Fantasy   from './pages/Fantasy.tsx'
 
-// Main App component
+// Main App component — defines all page routes
 function App() {
   return (
-    // Router wraps everything to enable navigation
+    // Router enables browser URL navigation
     <Router>
-      <div className="min-h-screen bg-gray-950 text-white">
-        <Routes>
-          {/* Home page — shows all 7 features */}
-          <Route path="/" element={<Home />} />
-          
-          {/* Feature 3 — Win Probability */}
-          <Route path="/win-probability" element={<WinProbability />} />
-          
-          {/* Feature 2 — AI Narrator */}
-          <Route path="/narrator" element={<Narrator />} />
-          
-          {/* Feature 4 — Pressure Score */}
-          <Route path="/pressure" element={<PressureScore />} />
+      {/*
+        The dark background is set globally in index.css on the body element.
+        No need to repeat it here — just let routes render their pages.
+      */}
+      <Routes>
+        {/* Home/landing page */}
+        <Route path="/"            element={<Home />}      />
 
-          {/* Feature 1 — Delta Brief "Explain Like I Was Studying" */}
-          <Route path="/delta" element={<DeltaBriefing />} />
+        {/* All upcoming + live matches grid */}
+        <Route path="/matches"     element={<Matches />}   />
 
-          {/* Feature 5 — Chess-Style Turning Points Map */}
-          <Route path="/turning-points" element={<TurningPoints />} />
+        {/* Live match view — :matchId comes from URL like /live/abc123 */}
+        <Route path="/live/:matchId" element={<LiveMatch />} />
 
-          {/* Feature 6 — Friend Group Prediction Game */}
-          <Route path="/game" element={<PredictionGame />} />
+        {/* Match prediction form */}
+        <Route path="/predict"     element={<Predict />}   />
 
-          {/* Feature 7 — Post-Match 60-Second Debrief */}
-          <Route path="/debrief" element={<PostMatchDebrief />} />
-        </Routes>
-      </div>
+        {/* Head-to-head rivalry intelligence */}
+        <Route path="/rivalry"     element={<Rivalry />}   />
+
+        {/* Fantasy XI optimizer */}
+        <Route path="/fantasy"     element={<Fantasy />}   />
+
+        {/* About page — simple static page */}
+        <Route path="/about" element={
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-4xl mb-4">🏏</p>
+              <h1 className="text-2xl font-bold text-text-primary mb-2">CricIQ</h1>
+              <p className="text-text-secondary">Cricket Intelligence Platform</p>
+              <p className="text-text-secondary text-sm mt-2">Final Year Project — VIT Bhopal</p>
+            </div>
+          </div>
+        } />
+      </Routes>
     </Router>
   )
 }

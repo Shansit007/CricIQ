@@ -1,13 +1,11 @@
 fastapi
-uvicorn
+uvicorn[standard]
 python-dotenv
-supabase
-langchain
-langchain-groq
-langchain-core
+python-socketio
 groq
 httpx
 python-multipart
+slowapi
 joblib
 numpy
 xgboost
@@ -15,3 +13,4 @@ shap
 scikit-learn
 pandas
 pydantic
+supabase
