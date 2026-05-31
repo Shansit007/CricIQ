@@ -3,6 +3,9 @@ uvicorn[standard]
 python-dotenv
 python-socketio
 groq
+langchain-groq
+langchain
+langchain-core
 httpx
 python-multipart
 slowapi
