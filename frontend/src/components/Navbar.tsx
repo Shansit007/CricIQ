@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 // Props: isLive tells Navbar to show the pulsing LIVE dot
 interface NavbarProps {
@@ -12,7 +13,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ isLive = false }: NavbarProps) {
-  // Track if hamburger menu is open (for mobile)
+  const { user, profile } = useAuth();   // get logged-in user
   const [menuOpen, setMenuOpen] = useState(false);
 
   // useLocation tells us which page we're on (so we can highlight active nav link)
@@ -30,12 +31,13 @@ export default function Navbar({ isLive = false }: NavbarProps) {
   const navLinks = [
     { label: 'Matches',   path: '/matches'  },
     { label: 'Predict',   path: '/predict'  },
-    { label: 'Study',     path: '/study'    },   // Delta Briefing
-    { label: 'Catch Up',  path: '/catchup'  },   // AI Catch-Up
-    { label: 'Pressure',  path: '/pressure' },   // Pressure Score
-    { label: 'Turning',   path: '/turning'  },   // Turning Points
+    { label: 'Study',     path: '/study'    },
+    { label: 'Catch Up',  path: '/catchup'  },
+    { label: 'Pressure',  path: '/pressure' },
+    { label: 'Turning',   path: '/turning'  },
     { label: 'Rivalry',   path: '/rivalry'  },
     { label: 'Fantasy',   path: '/fantasy'  },
+    { label: '🎮 Play',   path: '/game'     },   // Game Room
   ];
 
   return (
@@ -83,15 +85,26 @@ export default function Navbar({ isLive = false }: NavbarProps) {
             ))}
           </div>
 
-          {/* ---- Right: GitHub link (desktop) ---- */}
+          {/* ---- Right: Auth + GitHub ---- */}
           <div className="hidden md:flex items-center gap-3">
-            <a
-              href="https://github.com/Shansit007/CricIQ"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-text-secondary hover:text-text-primary transition-colors text-sm flex items-center gap-1"
-            >
-              {/* GitHub icon (SVG) */}
+            {user ? (
+              /* Logged in: show avatar → goes to dashboard */
+              <Link to="/dashboard"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-accent-cyan/30 hover:border-accent-cyan transition-all">
+                <div className="w-6 h-6 rounded-full bg-accent-cyan/20 flex items-center justify-center text-xs font-bold text-accent-cyan">
+                  {profile?.username?.slice(0, 1).toUpperCase() || 'U'}
+                </div>
+                <span className="text-text-primary text-sm font-medium">{profile?.username || 'Profile'}</span>
+              </Link>
+            ) : (
+              /* Not logged in: show Login button */
+              <Link to="/login"
+                className="px-4 py-1.5 rounded-lg bg-accent-cyan text-bg-primary text-sm font-semibold hover:bg-accent-cyan/90 transition-all">
+                Log In
+              </Link>
+            )}
+            <a href="https://github.com/Shansit007/CricIQ" target="_blank" rel="noopener noreferrer"
+              className="text-text-secondary hover:text-text-primary transition-colors text-sm flex items-center gap-1">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
               </svg>

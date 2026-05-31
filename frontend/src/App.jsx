@@ -1,70 +1,49 @@
 // ============================================
-// App.jsx — Main CricIQ App with updated routing
-// All 6 pages wired up here
+// App.jsx — Main CricIQ App with all routes
 // ============================================
 
-// React Router imports
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext.tsx'   // global auth state
 
-// New upgraded pages (TypeScript components work fine in JSX app)
+// Pages
 import Home          from './pages/Home.tsx'
 import Matches       from './pages/Matches.tsx'
 import LiveMatch     from './pages/LiveMatch.tsx'
 import Predict       from './pages/Predict.tsx'
 import Rivalry       from './pages/Rivalry.tsx'
 import Fantasy       from './pages/Fantasy.tsx'
-import DeltaBriefing from './pages/DeltaBriefing.tsx'   // Feature 1: Study Mode
-import CatchUp       from './pages/CatchUp.tsx'          // Feature 2: AI Catch-Up
-import PressureScore from './pages/PressureScore.tsx'    // Feature 3: Pressure Score
-import TurningPoints from './pages/TurningPoints.tsx'    // Feature 4: Turning Points Map
+import DeltaBriefing from './pages/DeltaBriefing.tsx'
+import CatchUp       from './pages/CatchUp.tsx'
+import PressureScore from './pages/PressureScore.tsx'
+import TurningPoints from './pages/TurningPoints.tsx'
+import Login         from './pages/Login.tsx'           // Auth
+import Dashboard     from './pages/Dashboard.tsx'       // Personal dashboard
+import GameRoom      from './pages/GameRoom.tsx'        // Friend game room
+import Admin         from './pages/Admin.tsx'           // Admin dashboard
 
-// Main App component — defines all page routes
 function App() {
   return (
-    // Router enables browser URL navigation
-    <Router>
-      {/*
-        The dark background is set globally in index.css on the body element.
-        No need to repeat it here — just let routes render their pages.
-      */}
-      <Routes>
-        {/* Home/landing page */}
-        <Route path="/"            element={<Home />}      />
-
-        {/* All upcoming + live matches grid */}
-        <Route path="/matches"     element={<Matches />}   />
-
-        {/* Live match view — :matchId comes from URL like /live/abc123 */}
-        <Route path="/live/:matchId" element={<LiveMatch />} />
-
-        {/* Match prediction form */}
-        <Route path="/predict"     element={<Predict />}   />
-
-        {/* Head-to-head rivalry intelligence */}
-        <Route path="/rivalry"     element={<Rivalry />}   />
-
-        {/* Fantasy XI optimizer */}
-        <Route path="/fantasy"     element={<Fantasy />}   />
-
-        {/* New 4 features */}
-        <Route path="/study"    element={<DeltaBriefing />} />
-        <Route path="/catchup"  element={<CatchUp />}       />
-        <Route path="/pressure" element={<PressureScore />} />
-        <Route path="/turning"  element={<TurningPoints />} />
-
-        {/* About page — simple static page */}
-        <Route path="/about" element={
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-4xl mb-4">🏏</p>
-              <h1 className="text-2xl font-bold text-text-primary mb-2">CricIQ</h1>
-              <p className="text-text-secondary">Cricket Intelligence Platform</p>
-              <p className="text-text-secondary text-sm mt-2">Final Year Project — VIT Bhopal</p>
-            </div>
-          </div>
-        } />
-      </Routes>
-    </Router>
+    // AuthProvider wraps everything so any page can access the logged-in user
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/"              element={<Home />}         />
+          <Route path="/matches"       element={<Matches />}      />
+          <Route path="/live/:matchId" element={<LiveMatch />}    />
+          <Route path="/predict"       element={<Predict />}      />
+          <Route path="/rivalry"       element={<Rivalry />}      />
+          <Route path="/fantasy"       element={<Fantasy />}      />
+          <Route path="/study"         element={<DeltaBriefing />}/>
+          <Route path="/catchup"       element={<CatchUp />}      />
+          <Route path="/pressure"      element={<PressureScore />}/>
+          <Route path="/turning"       element={<TurningPoints />}/>
+          <Route path="/login"         element={<Login />}        />
+          <Route path="/dashboard"     element={<Dashboard />}    />
+          <Route path="/game"          element={<GameRoom />}     />
+          <Route path="/admin"         element={<Admin />}        />
+        </Routes>
+      </Router>
+    </AuthProvider>
   )
 }
 
