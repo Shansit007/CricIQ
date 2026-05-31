@@ -61,7 +61,8 @@ export default function CatchUp() {
     const lastChecked = new Date(Date.now() - form.minutes_away * 60 * 1000).toISOString();
 
     try {
-      const res = await fetch('http://localhost:8000/api/catchup', {
+      const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${BASE}/api/catchup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, last_checked: lastChecked }),

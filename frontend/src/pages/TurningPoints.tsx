@@ -60,7 +60,8 @@ export default function TurningPoints() {
     setLoading(true);
     setSelected(null);
     try {
-      const res = await fetch('http://localhost:8000/api/turning-points', {
+      const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${BASE}/api/turning-points`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
