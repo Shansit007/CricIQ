@@ -173,10 +173,10 @@ cd frontend && npx vercel --prod
 
 ## 👤 Author
 
-**Shansit** — Final Year BTech CSE (AI/ML), VIT Bhopal University
+**Shansit** VIT Bhopal University
 
 - GitHub: [@Shansit007](https://github.com/Shansit007)
-- Project: Final Year Project, 8th Semester, 2025
+- 
 
 ---
 
