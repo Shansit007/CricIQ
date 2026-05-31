@@ -54,6 +54,36 @@ body {
    Reusable component classes
    ============================================ */
 
+/* ============================================
+   Global input / select / textarea fix
+   Browser defaults give white background + dark text.
+   Override everything to match our dark theme.
+   ============================================ */
+input,
+select,
+textarea {
+  background-color: var(--bg-card) !important;   /* dark card background */
+  color: var(--text-primary) !important;          /* light readable text */
+  border: 1px solid var(--bg-card-border);
+  border-radius: 8px;
+  outline: none;
+}
+
+/* Placeholder text — dimmer than real text */
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 1;
+}
+
+/* Focus ring — cyan glow, no browser default blue */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent-cyan) !important;
+  box-shadow: 0 0 0 1px var(--accent-cyan);
+}
+
 /* Standard card used throughout the app */
 .criciq-card {
   background-color: var(--bg-card);
