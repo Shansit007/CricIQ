@@ -5,9 +5,10 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase project credentials (hardcoded for reliability)
-const SUPABASE_URL  = 'https://nbtcsdczvaxnfedxkiji.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5idGNzZGN6dmF4bmZlZHhraWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDA5MzIsImV4cCI6MjA5NTM3NjkzMn0.SQKMrkjBjR6k7fNQuaYEmfrGvtJTRvMg_uLa1chJJBw';
+// Supabase project credentials
+// Reads from env var (VITE_SUPABASE_ANON_KEY in Vercel, hardcoded fallback for local)
+const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL      || 'https://nbtcsdczvaxnfedxkiji.supabase.co';
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5idGNzZGN6dmF4bmZlZHhraWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDA5MzIsImV4cCI6MjA5NTM3NjkzMn0.SQKMrkjBjR6k7fNQuaYEmfrGvtJTRvMg_uLa1chJJBw';
 
 // Create one shared client — never create multiple clients
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
