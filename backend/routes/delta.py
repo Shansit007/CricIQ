@@ -94,9 +94,16 @@ async def get_delta_briefing(body: DeltaRequest):
 
     # ---- Calculate how long the user was away ----
     try:
-        last_dt = datetime.fromisoformat(body.last_checked)
-        minutes_away = max(1, int((datetime.utcnow() - last_dt).total_seconds() / 60))
-    except Exception:
+        # JavaScript sends ISO strings ending in 'Z' (e.g. "2024-01-01T10:00:00.000Z")
+        # Python's fromisoformat() can't parse the 'Z' — replace it with '+00:00'
+        clean_ts = body.last_checked.replace('Z', '+00:00')
+        last_dt  = datetime.fromisoformat(clean_ts)
+        # Make utcnow() timezone-aware so subtraction works
+        from datetime import timezone
+        now = datetime.now(timezone.utc)
+        minutes_away = max(1, int((now - last_dt).total_seconds() / 60))
+    except Exception as e:
+        print(f"[Delta] Timestamp parse error: {e}")
         minutes_away = 30   # default: assume 30 minutes
 
     # ---- Get events that happened in that window ----

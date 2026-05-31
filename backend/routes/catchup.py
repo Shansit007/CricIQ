@@ -44,9 +44,14 @@ async def get_catchup(body: CatchupRequest):
 
     # ---- Calculate time away ----
     try:
-        last_dt      = datetime.fromisoformat(body.last_checked)
-        minutes_away = max(1, int((datetime.utcnow() - last_dt).total_seconds() / 60))
-    except Exception:
+        # Fix: JavaScript ISO strings end in 'Z', Python needs '+00:00'
+        clean_ts = body.last_checked.replace('Z', '+00:00')
+        last_dt  = datetime.fromisoformat(clean_ts)
+        from datetime import timezone
+        now = datetime.now(timezone.utc)
+        minutes_away = max(1, int((now - last_dt).total_seconds() / 60))
+    except Exception as e:
+        print(f"[Catchup] Timestamp parse error: {e}")
         minutes_away = 45
 
     runs_needed    = body.target - body.current_score
