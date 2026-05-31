@@ -6,148 +6,147 @@
 [![Made with Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python)](https://python.org)
 [![Made with React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 
-> **Real-time cricket intelligence platform with AI commentary, win probability prediction & fantasy optimization**
-
-[DEMO_GIF_PLACEHOLDER]
+> **AI-powered cricket intelligence platform — built for college students who can't watch every ball.**
+> Final Year Project — B.Tech CSE (AI/ML), VIT Bhopal University
 
 ---
 
-## 🌟 Features
+## 🌐 Live Demo
 
-| Feature | Description |
-|---|---|
-| 🔴 **Live Match Tracking** | Real scores from CricAPI across IPL, T20I, ODI, Test formats |
-| 🤖 **AI Commentary** | Ball-by-ball commentary by Llama 3.3 70B via Groq (free tier) |
-| 📊 **Win Probability** | XGBoost model trained on 500K+ deliveries — updated every ball |
-| 🔍 **SHAP Explainability** | "Why did the probability change?" in plain English |
-| ⚔️ **Rivalry Intelligence** | H2H stats, year-by-year trends, top performers |
-| 🏏 **Fantasy XI Optimizer** | Budget-constrained Dream11 team picker with AI reasoning |
-| ⚡ **Real-time WebSocket** | Socket.io simulation with ball-by-ball updates every 3 seconds |
+**Frontend:** https://criciq-nine.vercel.app  
+**Backend API:** https://criciq-backend-8aoj.onrender.com/docs  
+**Admin Dashboard:** https://criciq-nine.vercel.app/admin
+
+---
+
+## 🌟 Features (11 total)
+
+| # | Feature | Description |
+|---|---|---|
+| 1 | 📊 **Win Probability** | XGBoost model trained on 500K+ IPL deliveries — updated every ball |
+| 2 | 🔍 **SHAP Explainability** | "Why did the probability change?" — plain English, not ML jargon |
+| 3 | 🤖 **AI Commentary** | Ball-by-ball Harsha Bhogle-style commentary via Llama 3.3 70B (Groq) |
+| 4 | 📚 **Study Mode (Delta Briefing)** | Set a timer, study, come back — get ONLY what changed in 4 lines |
+| 5 | 🎙 **AI Catch-Up Narrator** | Been away 45 mins? Get a 30-second friend-style catch-up from AI |
+| 6 | ⚡ **Pressure Score** | Novel ML metric: `f(runs_needed, balls_left, wickets, SR, economy, phase)` — fires alert at critical moments |
+| 7 | ♟ **Turning Points Map** | Chess-style analysis of the 3 match-turning moments + counterfactual ("if this catch wasn't dropped...") |
+| 8 | ⚔️ **Rivalry Intelligence** | H2H stats, year-by-year trends, top performers between any two teams |
+| 9 | 🏏 **Fantasy XI Optimizer** | Budget-constrained Dream11 team picker |
+| 10 | 🎮 **Friend Game Room** | Create a room → share 6-digit code → friends predict → live leaderboard → Cricket Brain crowned |
+| 11 | 🔐 **Auth + Dashboard** | Email/Google login via Supabase — personal prediction history and stats |
 
 ---
 
 ## 🏗️ Architecture
 
-```mermaid
-graph TB
-    A[React Frontend - Vercel] -->|REST API| B[FastAPI Backend - Render]
-    A -->|WebSocket Socket.io| B
-    B -->|Poll every 60s| C[CricAPI - Free tier]
-    B -->|AI Commentary| D[Groq API - Llama 3.3 70B - Free]
-    B --> E[XGBoost ML Model]
-    E --> F[SHAP TreeExplainer]
-    B --> G[Kaggle CSV Datasets]
-    G -->|IPL 2008-2024| E
-    G -->|T20I + ODI| E
-    A -->|Deploy| H[Vercel]
-    B -->|Deploy| I[Render]
+```
+React Frontend (Vercel)
+    │
+    ├── REST API calls ──────────────► FastAPI Backend (Render)
+    │                                        │
+    ├── WebSocket (Socket.io) ───────────────┤
+    │                                        ├── XGBoost ML Model (84% accuracy)
+    └── Supabase Realtime ──────────────────►│── SHAP TreeExplainer
+                                             ├── Groq Llama 3.3 70B (AI commentary)
+                                             ├── Supabase (Auth + DB + Realtime)
+                                             └── Cricsheet data (500K+ deliveries)
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack (100% Free)
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| **Frontend** | React + Tailwind CSS | UI framework |
-| **Charts** | Recharts + D3.js | Win probability + momentum charts |
-| **Animation** | Framer Motion | Page transitions + gauge animation |
-| **Backend** | FastAPI (Python) | REST API + WebSocket server |
-| **WebSocket** | python-socketio | Real-time ball events |
-| **ML Model** | XGBoost + scikit-learn | Win probability prediction |
-| **Explainability** | SHAP TreeExplainer | Feature importance explanations |
-| **AI Commentary** | Groq API (Llama 3.3 70B) | Natural language commentary |
-| **Live Data** | CricAPI free tier | Match scores + schedules |
-| **Data** | Kaggle IPL/ICC datasets | 500K+ ball-by-ball records |
-| **Deployment** | Vercel + Render | Free hosting |
+| **Frontend** | React 18 + TypeScript + Tailwind CSS | UI |
+| **Charts** | Recharts | Win probability + rivalry charts |
+| **Backend** | FastAPI (Python 3.11) | REST API + WebSocket |
+| **Real-time** | python-socketio + Supabase Realtime | Live match + game room |
+| **ML Model** | XGBoost + scikit-learn | Win probability |
+| **Explainability** | SHAP TreeExplainer | Feature importance |
+| **AI/LLM** | Groq API — Llama 3.3 70B | Commentary + catch-up narrator |
+| **LLM Framework** | LangChain | LLM chains |
+| **Auth + DB** | Supabase | Authentication + PostgreSQL |
+| **Data** | Cricsheet.org | 500K+ IPL ball-by-ball records |
+| **Deploy Frontend** | Vercel | Free hosting |
+| **Deploy Backend** | Render | Free hosting |
 
 ---
 
-## 🤖 ML Model Details
+## 🤖 ML Model — Pressure Score (Novel Metric)
+
+The **Pressure Score** is a novel metric invented for CricIQ:
+
+```
+Pressure Score = RRR × wicket_multiplier × batter_efficiency × phase_factor × bowler_factor
+```
+
+- **Range**: 0 (no pressure) to 15 (maximum/critical)
+- **Inputs**: Runs needed, balls remaining, wickets in hand, batter strike rate, bowler economy, match phase
+- **Alert**: Fires a notification when score crosses threshold — "🔥 Critical moment RIGHT NOW"
+
+### Win Probability Model
 
 - **Algorithm**: XGBoost Classifier
-- **Training Data**: IPL 2008–2024, T20I, ODI datasets (Kaggle)
-- **Features (12 total)**:
-  1. Current Score
-  2. Wickets Fallen
-  3. Overs Completed
-  4. Target Score
-  5. Runs Needed
-  6. Wickets in Hand
-  7. Balls Remaining
-  8. Current Run Rate (CRR)
-  9. Required Run Rate (RRR)
-  10. Match Format (encoded)
-  11. Pitch Type (encoded)
-  12. Pressure Score (custom metric)
+- **Training Data**: 500K+ IPL deliveries (Cricsheet.org)
+- **Features**: `cum_runs`, `cum_wickets`, `balls_remaining`, `runs_needed`, `ball_number`, `target`
 - **Accuracy**: 84% on test set
-- **Explainability**: SHAP TreeExplainer — top 5 feature contributions per prediction
+- **Explainability**: SHAP values translated into plain cricket language
 
 ---
 
-## 💡 What Makes CricIQ Unique
+## 🎮 Friend Game Room
 
-- **Pressure Score**: A custom metric I invented — `f(runs needed, balls left, wickets, strike rate, economy, match phase)` — fires a WebSocket event when the match reaches a critical moment
-- **Ball Simulation**: CricAPI free tier only gives scores (not ball-by-ball). CricIQ fills the gap by simulating balls probabilistically between real score polls, staying synchronized with the true score
-- **SHAP in Plain English**: ML explainability is usually for data scientists. CricIQ translates SHAP values into cricket-specific sentences any fan can understand
+1. One person creates a room → gets a 6-digit code (e.g. `AB3X7K`)
+2. Share code with WhatsApp group → friends join instantly
+3. Everyone predicts: next wicket / next boundary / final score
+4. **Live leaderboard** updates in real-time via Supabase Realtime
+5. End of match → **"Cricket Brain of the Match"** crowned 🏆
 
 ---
 
 ## 🚀 Local Setup
 
-### 1. Clone the repo
+### 1. Clone
 ```bash
 git clone https://github.com/Shansit007/CricIQ.git
 cd CricIQ
 ```
 
-### 2. Backend setup
+### 2. Backend
 ```bash
 cd backend
 pip3 install -r requirements.txt
-cp .env.example .env
-# Edit .env and add your API keys (see below)
+# Create .env with your keys (see Environment Variables below)
 uvicorn main:socket_app --reload --port 8000
 ```
 
-### 3. Frontend setup
+### 3. Frontend
 ```bash
 cd frontend
 npm install
-cp .env.example .env
-# Edit .env and set VITE_API_URL=http://localhost:8000
 npm run dev
+# Open http://localhost:5173
 ```
-
-Open `http://localhost:5173` in your browser 🎉
 
 ---
 
 ## 🔐 Environment Variables
 
 ### Backend (`backend/.env`)
-
-| Variable | Where to get it | Required? |
-|---|---|---|
-| `CRICAPI_KEY` | [cricapi.com](https://cricapi.com) — free 100 req/day | Yes (mock data if missing) |
-| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) — completely free | Yes (fallback pool if missing) |
-| `SUPABASE_URL` | [supabase.com](https://supabase.com) — free tier | Optional |
-| `SUPABASE_KEY` | [supabase.com](https://supabase.com) — free tier | Optional |
-| `FRONTEND_URL` | Your Vercel URL (for CORS) | Production only |
+```
+GROQ_API_KEY=your_groq_key          # console.groq.com — free
+SUPABASE_URL=your_supabase_url      # supabase.com — free
+SUPABASE_ANON_KEY=your_anon_key
+FRONTEND_URL=https://criciq-nine.vercel.app
+```
 
 ### Frontend (`frontend/.env`)
-
-| Variable | Value |
-|---|---|
-| `VITE_API_URL` | `http://localhost:8000` (dev) or your Render URL (prod) |
-| `VITE_WS_URL` | `http://localhost:8000` (dev) or your Render URL (prod) |
-
----
-
-## 📊 Data Sources (all free)
-
-- **IPL 2008–2024**: [Kaggle IPL Dataset](https://www.kaggle.com/datasets/patrickb1912/ipl-complete-dataset-20082020) — `data/ipl_matches.csv` + `data/ipl_deliveries.csv`
-- **T20I + ODI**: [Cricsheet.org](https://cricsheet.org) — download free ball-by-ball CSV files
+```
+VITE_API_URL=http://localhost:8000
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+```
 
 ---
 
@@ -155,28 +154,20 @@ Open `http://localhost:5173` in your browser 🎉
 
 | Part | Platform | Cost |
 |---|---|---|
-| Frontend | [Vercel](https://vercel.com) | Free |
-| Backend | [Render](https://render.com) | Free |
-| Database | [Supabase](https://supabase.com) | Free tier |
-
-**Deploy frontend to Vercel:**
-```bash
-cd frontend && npx vercel --prod
-```
-
-**Deploy backend to Render:**
-- Connect GitHub repo to Render
-- Build command: `pip install -r requirements.txt`
-- Start command: `uvicorn main:socket_app --host 0.0.0.0 --port $PORT`
+| Frontend | Vercel | Free |
+| Backend | Render | Free |
+| Database + Auth | Supabase | Free tier |
+| AI/LLM | Groq API | Free tier |
 
 ---
 
 ## 👤 Author
 
-**Shansit** VIT Bhopal University
+**Shansit** — B.Tech CSE (AI/ML), 8th Semester  
+VIT Bhopal University
 
 - GitHub: [@Shansit007](https://github.com/Shansit007)
-- 
+- Project: [github.com/Shansit007/CricIQ](https://github.com/Shansit007/CricIQ)
 
 ---
 
