@@ -7,12 +7,16 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
 // New upgraded pages (TypeScript components work fine in JSX app)
-import Home      from './pages/Home.tsx'
-import Matches   from './pages/Matches.tsx'
-import LiveMatch from './pages/LiveMatch.tsx'
-import Predict   from './pages/Predict.tsx'
-import Rivalry   from './pages/Rivalry.tsx'
-import Fantasy   from './pages/Fantasy.tsx'
+import Home          from './pages/Home.tsx'
+import Matches       from './pages/Matches.tsx'
+import LiveMatch     from './pages/LiveMatch.tsx'
+import Predict       from './pages/Predict.tsx'
+import Rivalry       from './pages/Rivalry.tsx'
+import Fantasy       from './pages/Fantasy.tsx'
+import DeltaBriefing from './pages/DeltaBriefing.tsx'   // Feature 1: Study Mode
+import CatchUp       from './pages/CatchUp.tsx'          // Feature 2: AI Catch-Up
+import PressureScore from './pages/PressureScore.tsx'    // Feature 3: Pressure Score
+import TurningPoints from './pages/TurningPoints.tsx'    // Feature 4: Turning Points Map
 
 // Main App component — defines all page routes
 function App() {
@@ -41,6 +45,12 @@ function App() {
 
         {/* Fantasy XI optimizer */}
         <Route path="/fantasy"     element={<Fantasy />}   />
+
+        {/* New 4 features */}
+        <Route path="/study"    element={<DeltaBriefing />} />
+        <Route path="/catchup"  element={<CatchUp />}       />
+        <Route path="/pressure" element={<PressureScore />} />
+        <Route path="/turning"  element={<TurningPoints />} />
 
         {/* About page — simple static page */}
         <Route path="/about" element={

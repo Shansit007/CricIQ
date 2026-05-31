@@ -28,11 +28,14 @@ export default function Navbar({ isLive = false }: NavbarProps) {
 
   // Nav links definition — add/remove pages here
   const navLinks = [
-    { label: 'Matches',  path: '/matches'  },
-    { label: 'Predict',  path: '/predict'  },
-    { label: 'Rivalry',  path: '/rivalry'  },
-    { label: 'Fantasy',  path: '/fantasy'  },
-    { label: 'About',    path: '/about'    },
+    { label: 'Matches',   path: '/matches'  },
+    { label: 'Predict',   path: '/predict'  },
+    { label: 'Study',     path: '/study'    },   // Delta Briefing
+    { label: 'Catch Up',  path: '/catchup'  },   // AI Catch-Up
+    { label: 'Pressure',  path: '/pressure' },   // Pressure Score
+    { label: 'Turning',   path: '/turning'  },   // Turning Points
+    { label: 'Rivalry',   path: '/rivalry'  },
+    { label: 'Fantasy',   path: '/fantasy'  },
   ];
 
   return (

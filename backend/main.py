@@ -53,17 +53,25 @@ async def startup():
 # ============================================
 # Register new route files (v2 features)
 # ============================================
-from routes.matches    import router as matches_router
-from routes.predict    import router as predict_router
-from routes.commentary import router as commentary_router
-from routes.rivalry    import router as rivalry_router
-from routes.fantasy    import router as fantasy_router
+from routes.matches        import router as matches_router
+from routes.predict        import router as predict_router
+from routes.commentary     import router as commentary_router
+from routes.rivalry        import router as rivalry_router
+from routes.fantasy        import router as fantasy_router
+from routes.delta          import router as delta_router         # Feature 1: Delta Briefing
+from routes.catchup        import router as catchup_router       # Feature 2: AI Catch-Up
+from routes.pressure       import router as pressure_router      # Feature 3: Pressure Score
+from routes.turning_points import router as turning_points_router  # Feature 4: Turning Points
 
 app.include_router(matches_router)
 app.include_router(predict_router)
 app.include_router(commentary_router)
 app.include_router(rivalry_router)
 app.include_router(fantasy_router)
+app.include_router(delta_router)
+app.include_router(catchup_router)
+app.include_router(pressure_router)
+app.include_router(turning_points_router)
 
 # ============================================
 # Keep old routers from Phase 1 (backward compat)
